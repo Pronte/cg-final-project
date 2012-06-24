@@ -6,7 +6,7 @@ var coloreColonne = coloreBordiniScuri;
 
 
 
-//#################utility#################
+//#################utilities#################
 
 
 var mkKnotsG2 = function (cpoints){
@@ -26,7 +26,68 @@ var mkKnotsG2 = function (cpoints){
 	return knots;
 }
 
+var mkKnotsG1 = function (cpoints){
+	var knots = [0,0];
 
+	var segNum = cpoints.length -1;
+
+	for(var i =1; i <= segNum; i++){
+		knots.push(i);
+
+		if(i == segNum){
+			knots.push(i);
+		}
+	}
+
+	return knots;
+}
+
+var mkNubG2 = function(cp){
+	return NUBS(S0)(2)(mkKnotsG2(cp))(cp);
+}
+var mkNubG1 = function(cp){
+	return NUBS(S0)(1)(mkKnotsG1(cp))(cp);
+}
+
+
+var scorrimentoProfilo = function(cp,scorrXY,scorrXZ){ //scorrimento di X relativo a Y, scorrimento di X relativo a Z
+	var sxy = scorrXY || 0;
+	var sxz = scorrXZ || 0;
+
+	var p = cp[0];
+	var z;
+	var y;
+
+	var zmax = p[2];
+	var zmin = p[2];
+	var ymax = p[1];
+	var ymin = p[1];
+
+	for(var i in cp){
+		p = cp[i];
+		z = p[2];
+		y = p[1];
+		z>zmax ? zmax = z : zmax = zmax ;
+		z<zmin ? zmin = z : zmin = zmin ;
+		y>ymax ? ymax = y : ymax = ymax ;
+		y<ymin ? ymin = y : ymin = ymin ;
+	}
+
+	return cp.map(function(p){return [p[0]+(sxy*(p[1]/ymax))+(sxz*(p[2]/zmax)),p[1],p[2]];});
+}
+
+var doubleCP = function(arr){
+
+	var ret = [arr[0]];
+
+	for(var i = 1; i<arr.length-1; i++){
+		ret.push(arr[i]);
+		ret.push(arr[i]);
+	}
+	ret.push(arr[arr.length-1]);
+
+	return ret;
+}
 //#########################################
 
 
@@ -314,18 +375,6 @@ var mkCustomBlocco = function (cpoints,spessore,n,durezzaCurva){ //control point
 	return dsurf;
 }
 
-var doubleCP = function(arr){
-
-	var ret = [arr[0]];
-
-	for(var i = 1; i<arr.length-1; i++){
-		ret.push(arr[i]);
-		ret.push(arr[i]);
-	}
-	ret.push(arr[arr.length-1]);
-
-	return ret;
-}
 
 var mkArcata = function (){
 		//var cpb0 = [[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.],[0.,0,0.]];
