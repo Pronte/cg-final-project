@@ -221,7 +221,8 @@ var proiezioneConCombinazioneLineare = function (cp1,cp2,delta,manualMinMaxes){
 
 	return ret;
 }
-//#########################################
+
+//######################################### ELEMENTS
 
 
 var mkTorre = function (){
@@ -398,11 +399,10 @@ var mkCapitello = function(){
 
 	var spess = 0.2;
 
-	var cpOrizz = [[0,0,0],[0,h*(1-hcurv),0],[0,h,0],[l*(lcurv),h,0],[l*(1-lcurv),h,0],[l,h,0],[l,h*(1-hcurv),0],[l,0,0]];
-	cpOrizz = cpOrizz.map(function(p){return [p[1],p[0],p[2]];});
+	var cpOrizz = [[0,0,0],[h*(1-hcurv),0,0],[h,0,0],[h,l*(lcurv),0],[h,l*(1-lcurv),0],[h,l,0],[h*(1-hcurv),l,0],[0,l,0]];
+	
+	var cpVert = [[0.5,0,0],[1,0,h*0.05],[1,0,h*0.6],[0.5,0,h*0.7],[0.5,0,h*0.75],[0.7,0,h*0.85],[0.7,0,h*0.93],[0.5,0,h*1],[0,0,h*1]];
 
-	var cpVert = [[0,0.5,0],[0,1,h*0.05],[0,1,h*0.6],[0,0.5,h*0.7],[0,0.5,h*0.75],[0,0.7,h*0.85],[0,0.7,h*0.93],[0,0.5,h*1],[0,0,h*1]];
-	cpVert = cpVert.map(function(p){return [p[1],p[0],p[2]];});
 
 	var ctrasl = cpOrizz.map(function(p){return [p[0],(p[1]-l/2),p[2]];});	
 
