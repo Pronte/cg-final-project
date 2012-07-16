@@ -1,3 +1,5 @@
+//#################colori####################
+
 var coloreIntonaco = [1.5,1.5,1.5]; 
 var colorePavimenti = [244/250, 164/250, 96/250];
 var coloreBordini = [245/250,245/250,245/250];
@@ -5,9 +7,28 @@ var coloreBordiniScuri = [225/250,225/250,225/250];
 var coloreColonne = coloreBordiniScuri;
 
 
-
 //#################utilities#################
 
+var resMapMedRes = {
+	"capitello" : [20,20],
+	"blocco" : [8,10],
+	"retroArco" : [30,3],
+	"cunetta" : [10,1],
+	"cunettaAlta" : [28,1],
+	"cupolaPortico" : [28,28],
+	"soffittoPortico" : [1,28]
+};
+var resMapLowRes = {
+	"capitello" : [10,10],
+	"blocco" : [3,3],
+	"retroArco" : [10,3],
+	"cunetta" : [10,1],
+	"cunettaAlta" : [18,1],
+	"cupolaPortico" : [18,18],
+	"soffittoPortico" : [1,18]
+};
+
+var resMap = resMapMedRes;
 
 var mkKnotsG2 = function (cpoints){
 	var knots = [0,0,0];
@@ -357,30 +378,30 @@ var mkElementoFacciata = function(){
 	return elem;
 }
 
-var mkCustomBlocco = function (cpoints,spessore,n,durezzaCurva){ //control points sul piano X,Z ! (y = 0 per ogni punto)
+var mkCustomBlocco = function (cpoints,spessore,n,durezzaCurva,grado){ //control points sul piano X,Z ! (y = 0 per ogni punto) , 0 = usa valore di default.
 	if(cpoints == undefined){
 		console.log("NO CONTROL POINTS FOR THIS BLOCK!")
 		return undefined;
 	}
 
 	var spess = spessore || 0.2;
-	var nn = n || 8;
+	var nn = n || resMap["blocco"][0];
 	var durezza = durezzaCurva || 2;
+	var g = grado || 2;
 
-	spess = spess*-1;
+	var detail = resMap["blocco"][1];
 
-	var domain2 = DOMAIN([[0,1],[0,1]])([nn,4]);
-	//var dom1 = INTERVALS(1)(20);
+	var domain2 = DOMAIN([[0,1],[0,1]])([nn,detail]);
 
-	var knots = mkKnotsG2(cpoints);
-	var base = NUBS(S0)(2)(knots)(cpoints);
+	var base = mkNub(cpoints,g,S0);
+	//var knots = mkKnotsG2(cpoints);
+	//var base = NUBS(S0)(2)(knots)(cpoints);
 
-	//DRAW(MAP(base)(dom1));
 
 	var csopra = cpoints.map(function(p){return [p[0],spess,p[2]]});
-	var sopra = NUBS(S0)(2)(knots)(csopra);
+	var sopra = mkNub(csopra,g,S0);
+	//var sopra = NUBS(S0)(2)(knots)(csopra);
 
-	//DRAW(MAP(sopra)(dom1));
 
 
 	var xEnd = 0;
@@ -442,26 +463,19 @@ var mkBlocco = function(x,y,l,h,alfa,n,spess){
 	var dsurf = MAP(surf)(domain2);
 
 	return dsurf;
-} */
+} 
+*/
+var mkBlocco = function(n,spess,l,h,alfa){
 
-var mkBlocco = function(x,y,l,h,alfa,n,spess){
-
-
-	var xx = x || 0;
-	var yy = y || 0;
 	var ll = l || 0.8;
 	var hh = h || 0.35;
-	var aa = alfa || 0;
-	var nn = n || 4;
+	var nn = n || 10;
 	var spessore = spess || 0.3;
 
 
-	var domain2 = DOMAIN([[0,1],[0,1]])([10,nn]);
-
-//	var cbase = [[1,0,1],[0.3,0,1],[0,0,1],[0,0,0.5],[0,0,0],[0.3,0,0],[1.7,0,0],[2,0,0],[2,0,0.5],[2,0,1],[1.7,0,1],[1,0,1]];
 	var cbase = [[ll/2,0,hh],[ll*0.3/2,0,hh],[0,0,hh],[0,0,hh/2],[0,0,0],[ll*0.3/2,0,0],[ll*1.7/2,0,0],[ll,0,0],[ll,0,hh/2],[ll,0,hh],[ll*1.7/2,0,hh],[ll/2,0,hh]];
 
-	return mkCustomBlocco(cbase,spessore);
+	return mkCustomBlocco(cbase,spessore,nn);
 
 }
 
@@ -473,11 +487,11 @@ var mkCapitello = function(){
 	lcurv = 0.4;
 	hcurv = 0.8;
 
-	var spess = 0.2;
+	var spess = 0.3;
 
-	var cpOrizz = [[0,0,0],[h*(1-hcurv),0,0],[h,0,0],[h,l*(lcurv),0],[h,l*(1-lcurv),0],[h,l,0],[h*(1-hcurv),l,0],[0,l,0]];
+	var cpOrizz = [[0,0,0],[spess*(1-hcurv),0,0],[spess,0,0],[spess,l*(lcurv),0],[spess,l*(1-lcurv),0],[spess,l,0],[spess*(1-hcurv),l,0],[0,l,0]];
 	
-	var cpVert = [[0.5,0,0],[1,0,h*0.05],[1,0,h*0.6],[0.5,0,h*0.7],[0.5,0,h*0.75],[0.7,0,h*0.85],[0.7,0,h*0.93],[0.5,0,h*1],[0,0,h*1]];
+	var cpVert = [[1,0,0],[1,0,h*0.05],[1,0,h*0.6],[0.5,0,h*0.7],[0.5,0,h*0.75],[0.7,0,h*0.85],[0.7,0,h*0.93],[0.5,0,h*1],[0,0,h*1]];
 
 
 	var ctrasl = cpOrizz.map(function(p){return [p[0],(p[1]-l/2),p[2]];});	
@@ -485,7 +499,7 @@ var mkCapitello = function(){
 	var profiloVert = NUBS(S0)(2)(mkKnotsG2(cpVert))(cpVert);
 	var profiloOrizz = NUBS(S1)(2)(mkKnotsG2(ctrasl))(ctrasl);
 
-	var dom2 = DOMAIN([[0,1],[0,1]])([20,15]);
+	var dom2 = DOMAIN([[0,1],[0,1]])(resMap["capitello"]);
 
 	var capitello = MAP(PROFILEPROD_SURFACE([profiloVert,profiloOrizz]))(dom2);
 	
@@ -499,7 +513,9 @@ var mkCapitello = function(){
 var mkColonna = function (){
 	var hcapitello = 0.35;
 
-	var b = mkBlocco();
+	var bCircularDetail = 12;
+
+	var b = mkBlocco(bCircularDetail);
 
 	var capitello = mkCapitello();
 	var capitelloAlto = S([2])([-1])(capitello);
@@ -523,9 +539,11 @@ var mkColonna = function (){
 }
 
 
-
 var mkArcata = function (){
-		var cpb0 = [[-0.2,0,0.01],[0,0,0.01],[0.3,0,0.01],[0.3,0,0.125],[0.3,0,0.225],[0.3,0,0.34],[0,0,0.34],[-0.2,0,0.34],[-0.2,0,0.01]];
+
+		var bCircularDetail = 10;
+
+		//var cpb0 = [[-0.2,0,0.01],[0+0.1,0,0.01],[0.3,0,0.01],[0.3,0,0.12],[0.3,0,0.23],[0.3,0,0.34],[0,0,0.34],[-0.2,0,0.34],[-0.2,0,0.01]];
 
 		var cpb1 = doubleCP([[0,0,0],[0.3,0,0],[0.3,0,0.3],[0,0,0.35],[0,0,0]]);
 		var cpb2 = doubleCP([[0.3,0,0.3],[0,0,0.35],[0,0,0.7],[0.1,0,0.7],[0.35,0,0.5],[0.3,0,0.3]]);
@@ -547,9 +565,11 @@ var mkArcata = function (){
 		var chiusuraFronte = [pDiChiusuraA,pDiChiusuraA,pDiChiusuraA];
 		var chiusuraRetro = [pDiChiusuraB,pDiChiusuraB,pDiChiusuraB];
 
-		var b0 = mkCustomBlocco(cpb0,0.2,6);
-		var b0s = [b0];
+		var b0 = mkBlocco(bCircularDetail+2,0.2,0.6,0.33);
+			b0.translate([0,2],[-0.3,0.01]);
 			b0.translate([2],[0.35]);
+
+		var b0s = [b0];
 
 		for(var i = 0; i<8; i++){
 			b0 = b0.clone().translate([2],[0.35]);
@@ -557,18 +577,20 @@ var mkArcata = function (){
 		}
 
 		var colonnina = STRUCT(b0s);
+			colonnina.scale([1],[-1]);
 
-		var b1 = mkCustomBlocco(cpb1,0.2,10);
-		var b2 = mkCustomBlocco(cpb2,0.2,10);
-		var b3 = mkCustomBlocco(cpb3,0.2,10);
-		var b4 = mkCustomBlocco(cpb4,0.2,12);
-		var b5 = mkCustomBlocco(cpb5,0.2,10);
-		var b6 = mkCustomBlocco(cpb6,0.2,10);
+		var b1 = mkCustomBlocco(cpb1,0.2,bCircularDetail+2);
+		var b2 = mkCustomBlocco(cpb2,0.2,bCircularDetail+4);
+		var b3 = mkCustomBlocco(cpb3,0.2,bCircularDetail);
+		var b4 = mkCustomBlocco(cpb4,0.2,bCircularDetail+2);
+		var b5 = mkCustomBlocco(cpb5,0.2,bCircularDetail+2);
+		var b6 = mkCustomBlocco(cpb6,0.2,bCircularDetail);
 
-		var b8 = mkCustomBlocco(cpb8,0.2,10);
+		var b8 = mkCustomBlocco(cpb8,0.2,bCircularDetail+2);
 			
 		var arco = STRUCT([b1,b2,b3,b4,b5,b6,b8]);
-		arco.translate([2],[0.35 + 0.35*10]);
+			arco.translate([2],[0.35 + 0.35*10]);
+			arco.scale([1],[-1]);
 
 		var blocchiSquadratiA = SIMPLEX_GRID([[0.4],[0.9+0.2],[0.35,-0.35*9,0.35]]);
 		var blocchiSquadratiB = SIMPLEX_GRID([[0.4],[0.1],[0.35,-0.35*9,0.35]]);
@@ -578,18 +600,18 @@ var mkArcata = function (){
 		var blocchiSquadrati = STRUCT([blocchiSquadratiA,blocchiSquadratiB]);
 
 		var retroArcoMapping = mkNubSurfaceWithCPointsAndGrades([chiusuraFronte,cpRetroArcoA,cpRetroArcoB,chiusuraRetro], 2, 1);
-		var domRetroArco = DOMAIN([[0,1],[0,1]])([30,3]);
+		var domRetroArco = DOMAIN([[0,1],[0,1]])(resMap["retroArco"]);
 		var retroArco = MAP(retroArcoMapping)(domRetroArco);
 			retroArco.translate([0,1,2],[0,0,0.35*11 + 0.01]);
 
 		var arcataSx = STRUCT([colonnina,arco,blocchiSquadrati,retroArco]);
 		var arcataDx = arcataSx.clone().scale([0],[-1]).translate([0],[3]);
 
-		var chiaveDiVolta = mkCustomBlocco(cpChiave,0.25,10,3);
+		var chiaveDiVolta = mkCustomBlocco(cpChiave,0.25,bCircularDetail,3);
 			chiaveDiVolta.translate([2],[0.35 + 0.35*10]);
+			chiaveDiVolta.scale([1],[-1]);
 		
-		var retroChiave = mkCustomBlocco(cpChiave,0.9,10,4);
-			retroChiave.scale([1],[-1]);
+		var retroChiave = mkCustomBlocco(cpChiave,0.9,bCircularDetail,4);
 			retroChiave.translate([2],[0.35 + 0.35*10]);
 
 
@@ -598,8 +620,8 @@ var mkArcata = function (){
 		return arcata;
 }
 
+
 var mkTimpano = function(){
-		var dom14 = INTERVALS(1)(14);
 		var dom14x2 = DOMAIN([[0,1],[0,1]])([14,2]);
 		var dom14x1 = DOMAIN([[0,1],[0,1]])([14,1]);
 
@@ -614,7 +636,7 @@ var mkTimpano = function(){
 		var altezzaPunta = 3;
 
 		var scorrimentoTimpano = 1;
-		var cpMinMaxes = [0,0.8,0,1.2];//cpCornicione.reduce(function);
+		var cpMinMaxes = [0,0.8,0,1.2];// si potrebbe ottimizzare con "cpCornicione.reduce(function);"
 
 		var fpunta = function(p){ return [p[0]+lunghezzaTimpanoAlto/2, p[1],p[2]+(altezzaPunta)];}
 		var frevX = function(p){ return [-p[0], p[1],p[2]]}
@@ -688,12 +710,12 @@ var mkPortico = function(){
 				var lporta = 1.3;
 				var hmuri = hportico;
 
-				var domBassoA = DOMAIN([[0,r-(lporta/2)],[0,hporta]])([10,1]);
-				var domBassoB = DOMAIN([[r+(lporta/2),2*r],[0,hporta]])([10,1]);
+				var domBassoA = DOMAIN([[0,r-(lporta/2)],[0,hporta]])(resMap["cunetta"]);
+				var domBassoB = DOMAIN([[r+(lporta/2),2*r],[0,hporta]])(resMap["cunetta"]);
 
-				var domAlto = DOMAIN([[0,2*r],[hporta,hmuri]])([28,1]);
+				var domAlto = DOMAIN([[0,2*r],[hporta,hmuri]])(resMap["cunettaAlta"]);
 
-				var domCupola = DOMAIN([[0,2*r],[0,hcupola]])([28,28]);
+				var domCupola = DOMAIN([[0,2*r],[0,hcupola]])(resMap["cupolaPortico"]);
 
 				var mappingMuro = function(p){
 					var x = p[0];
@@ -735,7 +757,7 @@ var mkPortico = function(){
 		var cunettaB = S([0])([-1])(cunettaA);
 			cunettaB.translate([0],[lportico]);
 
-		var domSoffitto = DOMAIN([[0,lportico+2*sforoSoffitto],[0,2*rCunetta]])([1,28]);
+		var domSoffitto = DOMAIN([[0,lportico+2*sforoSoffitto],[0,2*rCunetta]])(resMap["soffittoPortico"]);
 		var soffittoMapping = function(p){
 			var x = p[0];
 			var y = p[1];
@@ -830,5 +852,6 @@ var portico = mkPortico();
 
 var villa = STRUCT([torre,facciata,torre2,facciata2,colonne,arcate,timpano,portico]);
 
+//DRAW(colonne);
 
 DRAW(villa);
