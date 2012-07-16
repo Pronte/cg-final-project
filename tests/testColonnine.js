@@ -238,8 +238,11 @@ var mkColonnina = function(){
 
 var mkMiniColonnato = function(){
 
+	var lbloccoCentrale = 0.2;
+	var lmancorrente = 1.1;
 	var lcln = 0.13;
 	var lspaz = 0.05;
+	var hcolonnina = 0.65;
 
 	var cln = mkColonnina();
 	cln.translate([0],[lcln/2 + lspaz]);
@@ -253,7 +256,26 @@ var mkMiniColonnato = function(){
 
 	var colonnine = STRUCT(arrColonnine);
 
-	return STRUCT([colonnine]);
+	var mancorrenteCP2D = [[0,0],[0,0.07],[0.025,0.09],[0.065,0.09],[0.075,0.125],[0.1,0.125],[0.1,0]];
+
+	var mancorrente = EXTRUDE([lmancorrente])(POLYLINE(mancorrenteCP2D));
+		mancorrente = STRUCT([mancorrente, S([1])([-1])(mancorrente)]);
+
+		mancorrente.rotate([0,2],[-PI/2]);
+		mancorrente.translate([0,2],[lmancorrente,hcolonnina]);
+
+	var bloccoCentrale = SIMPLEX_GRID([[-(lmancorrente-0.1),lbloccoCentrale/2],[0.132],[-0.1,0.55]]);
+		bloccoCentrale.translate([1],[-0.066]);
+
+	var mezzoColonnato = STRUCT([colonnine,mancorrente,bloccoCentrale]);
+
+	var secondoMezzoColonnato = S([0])([-1])(mezzoColonnato);
+		secondoMezzoColonnato.translate([0],[lmancorrente*2]);
+
+	var colonnato = STRUCT([mezzoColonnato,secondoMezzoColonnato]);
+		colonnato.translate([1],[-0.125]);
+
+	return colonnato;
 }
 
 var colonnato = mkMiniColonnato();
