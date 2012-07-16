@@ -357,7 +357,62 @@ var mkElementoFacciata = function(){
 	return elem;
 }
 
+var mkCustomBlocco = function (cpoints,spessore,n,durezzaCurva){ //control points sul piano X,Z ! (y = 0 per ogni punto)
+	if(cpoints == undefined){
+		console.log("NO CONTROL POINTS FOR THIS BLOCK!")
+		return undefined;
+	}
 
+	var spess = spessore || 0.2;
+	var nn = n || 8;
+	var durezza = durezzaCurva || 2;
+
+	spess = spess*-1;
+
+	var domain2 = DOMAIN([[0,1],[0,1]])([nn,4]);
+	//var dom1 = INTERVALS(1)(20);
+
+	var knots = mkKnotsG2(cpoints);
+	var base = NUBS(S0)(2)(knots)(cpoints);
+
+	//DRAW(MAP(base)(dom1));
+
+	var csopra = cpoints.map(function(p){return [p[0],spess,p[2]]});
+	var sopra = NUBS(S0)(2)(knots)(csopra);
+
+	//DRAW(MAP(sopra)(dom1));
+
+
+	var xEnd = 0;
+	var yEnd = spess;
+	var zEnd = 0;
+
+	for (var i in cpoints){
+		xEnd += cpoints[i][0];
+		zEnd += cpoints[i][2];
+	}
+
+	xEnd = xEnd/cpoints.length;
+	zEnd = zEnd/cpoints.length;
+
+	pEnd = [xEnd,yEnd,zEnd];
+
+
+	var puntoDiChiusura = function(){return pEnd;}
+
+	var controls = [base];
+	for(var i = 0; i<durezza; i++){
+		controls.push(sopra);
+	}
+	controls.push(puntoDiChiusura);
+
+	var surf = BEZIER(S1)(controls);
+
+	var dsurf = MAP(surf)(domain2);
+
+	return dsurf;
+}
+/*
 var mkBlocco = function(x,y,l,h,alfa,n,spess){
 
 
@@ -387,6 +442,27 @@ var mkBlocco = function(x,y,l,h,alfa,n,spess){
 	var dsurf = MAP(surf)(domain2);
 
 	return dsurf;
+} */
+
+var mkBlocco = function(x,y,l,h,alfa,n,spess){
+
+
+	var xx = x || 0;
+	var yy = y || 0;
+	var ll = l || 0.8;
+	var hh = h || 0.35;
+	var aa = alfa || 0;
+	var nn = n || 4;
+	var spessore = spess || 0.3;
+
+
+	var domain2 = DOMAIN([[0,1],[0,1]])([10,nn]);
+
+//	var cbase = [[1,0,1],[0.3,0,1],[0,0,1],[0,0,0.5],[0,0,0],[0.3,0,0],[1.7,0,0],[2,0,0],[2,0,0.5],[2,0,1],[1.7,0,1],[1,0,1]];
+	var cbase = [[ll/2,0,hh],[ll*0.3/2,0,hh],[0,0,hh],[0,0,hh/2],[0,0,0],[ll*0.3/2,0,0],[ll*1.7/2,0,0],[ll,0,0],[ll,0,hh/2],[ll,0,hh],[ll*1.7/2,0,hh],[ll/2,0,hh]];
+
+	return mkCustomBlocco(cbase,spessore);
+
 }
 
 var mkCapitello = function(){
@@ -446,61 +522,6 @@ var mkColonna = function (){
 	return colonna;
 }
 
-var mkCustomBlocco = function (cpoints,spessore,n,durezzaCurva){ //control points sul piano X,Z ! (y = 0 per ogni punto)
-	if(cpoints == undefined){
-		console.log("NO CONTROL POINTS FOR THIS BLOCK!")
-		return undefined;
-	}
-
-	var spess = spessore || 0.2;
-	var nn = n || 8;
-	var durezza = durezzaCurva || 2;
-
-	spess = spess*-1;
-
-	var domain2 = DOMAIN([[0,1],[0,1]])([nn,4]);
-	//var dom1 = INTERVALS(1)(20);
-
-	var knots = mkKnotsG2(cpoints);
-	var base = NUBS(S0)(2)(knots)(cpoints);
-
-	//DRAW(MAP(base)(dom1));
-
-	var csopra = cpoints.map(function(p){return [p[0],spess,p[2]]});
-	var sopra = NUBS(S0)(2)(knots)(csopra);
-
-	//DRAW(MAP(sopra)(dom1));
-
-
-	var xEnd = 0;
-	var yEnd = spess;
-	var zEnd = 0;
-
-	for (var i in cpoints){
-		xEnd += cpoints[i][0];
-		zEnd += cpoints[i][2];
-	}
-
-	xEnd = xEnd/cpoints.length;
-	zEnd = zEnd/cpoints.length;
-
-	pEnd = [xEnd,yEnd,zEnd];
-
-
-	var puntoDiChiusura = function(){return pEnd;}
-
-	var controls = [base];
-	for(var i = 0; i<durezza; i++){
-		controls.push(sopra);
-	}
-	controls.push(puntoDiChiusura);
-
-	var surf = BEZIER(S1)(controls);
-
-	var dsurf = MAP(surf)(domain2);
-
-	return dsurf;
-}
 
 
 var mkArcata = function (){
@@ -809,8 +830,5 @@ var portico = mkPortico();
 
 var villa = STRUCT([torre,facciata,torre2,facciata2,colonne,arcate,timpano,portico]);
 
-DRAW(portico);
-DRAW(arcate);
-DRAW(colonne);
 
-//DRAW(villa);
+DRAW(villa);
