@@ -5,41 +5,60 @@ var colorePavimenti = [244/255, 164/255, 96/255];
 var colorePavimentiEsterni = [254/255, 254/255, 240/255];
 var coloreBordini = [245/255,245/255,245/255];
 var coloreBordiniScuri = [170/255,170/255,170/255];
+var coloreBordiniChiari = [235/255,215/255,200/255];
 var coloreColonne = [255/255,235/255,205/255];
 var coloreTimpano = coloreBordini;
 var coloreFregioSottoTimpano = [235/255,235/255,205/255];
 var coloreTetti = [254/255,111/255,94/255];
 var colorePuntale = coloreBordini;
 var colorePortico = [220/255,200/255,200/255];
-var coloreVetri = [178/255,255/255,255/255,0.3];
+var coloreVetri = [168/255,245/255,245/255,0.5];
 var coloreLineaPortico = coloreColonne;
+var coloreGrigliaBuco = coloreBordiniScuri;
 
 //#################utilities#################
 
-var resMapMedRes = {
+var resMapHRes = {
 	"capitello" : [20,20],
-	"blocco" : [8,10],
+	"blocco" : [12,15],
+	"bloccoBase" : [8,5],
+	"retroArco" : [30,3],
+	"cunetta" : [15,1],
+	"cunettaAlta" : [42,1],
+	"cupolaPortico" : [42,20],
+	"soffittoPortico" : [1,42],
+	"puntale" : [25,4],
+	"gradiniCircolari" : [64],
+	"rosone" : [64]
+};
+var resMapMRes = {
+	"capitello" : [20,20],
+	"blocco" : [12,10],
+	"bloccoBase" : [8,4],
 	"retroArco" : [30,3],
 	"cunetta" : [10,1],
 	"cunettaAlta" : [28,1],
 	"cupolaPortico" : [28,28],
 	"soffittoPortico" : [1,28],
 	"puntale" : [15,4],
-	"gradiniCircolari" : [32]
+	"gradiniCircolari" : [32],
+	"rosone" : [32]
 };
-var resMapLowRes = {
+var resMapLRes = {
 	"capitello" : [10,10],
-	"blocco" : [3,3],
+	"blocco" : [6,3],
+	"bloccoBase" : [6,3],
 	"retroArco" : [10,3],
 	"cunetta" : [10,1],
 	"cunettaAlta" : [18,1],
 	"cupolaPortico" : [18,18],
 	"soffittoPortico" : [1,18],
 	"puntale" : [8,4],
-	"gradiniCircolari" : [8]
+	"gradiniCircolari" : [8],
+	"rosone" : [16]
 };
 
-var resMap = resMapLowRes;
+var resMap = resMapLRes;
 
 
 var mkSphere = function(r,n){
@@ -88,6 +107,44 @@ var mkKnotsG2 = function (cpoints){
 
 	return knots;
 }
+
+	//crea la parte della corona circolare di raggio interno rInt e raggio esterno rEst
+	//che va da alfa1 a alfa2, campionata n volte, e estrusa di h.
+var mkPartOfCoronaCircolare = function(rInt,rEst,h,alfa1,alfa2,n){
+	var domain = DOMAIN([[rInt,rEst],[alfa1,alfa2],[0,1]])([1,n,1]);
+
+	var mapping = function(p){
+		var r = p[0];
+		var alfa = p[1];
+		var dh = p[2];
+		return [r*COS(alfa),r*SIN(alfa),h*dh];
+	}
+	return MAP(mapping)(domain);
+}
+
+	//crea la forma che si ottiene prendendo il quadrato di lato r con vertice in basso a sinistra nell'origine,
+	//e sottraendo ad esso la parte nel primo quadrante della circonferenza di raggio r centrata nell'origine.
+	//poi estrude dello spessore in input (spess)
+	//n e' il numero di slices della circonferenza.
+var mkComplementareQuartoDiCirconferenzaSolido = function(r,spess,n){
+
+	var points = [[r,r]];
+	var alfa;
+	var p;
+
+	for (var i =0; i<=n; i++){
+		alfa = (i*PI/2)/(n);
+
+		p = [r*COS(alfa),r*SIN(alfa)];
+		points.push(p);
+	}
+
+	var compl2D = TRIANGLE_FAN(points);
+
+	var compl = EXTRUDE([spess])(compl2D);
+	return compl;
+}
+
 
 var mkKnotsG1 = function (cpoints){
 	var knots = [0,0];
@@ -391,10 +448,10 @@ var mkFinestra = function (l,h,conVetro,conDavanzale,conCornicione){
 	var vert2 = SIMPLEX_GRID([[-l4,-l3,l2,-(l-2*(l4+l3+l2)),l2],		[-distaccoMuro,sp2-distaccoMuro],[h]]);
 	var vert1 = SIMPLEX_GRID([[-l4,-l3,-l2,l1,-(l-2*(l4+l3+l2+l1)),l1],	[-distaccoMuro,sp1-distaccoMuro],[h]]);
 	
-	var orizz4 = SIMPLEX_GRID([[l],[-distaccoMuro,sp4-distaccoMuro],[-(h-(l4)),l4]]);
-	var orizz3 = SIMPLEX_GRID([[l],[-distaccoMuro,sp3-distaccoMuro],[-(h-(l4+l3)),l3]]);
-	var orizz2 = SIMPLEX_GRID([[l],[-distaccoMuro,sp2-distaccoMuro],[-(h-(l4+l3+l2)),l2]]);
-	var orizz1 = SIMPLEX_GRID([[l],[-distaccoMuro,sp1-distaccoMuro],[-(h-(l4+l3+l2+l1)),l1]]);
+	var orizz4 = SIMPLEX_GRID([[-l4,l-2*l4],[-distaccoMuro,sp4-distaccoMuro],[-(h-(l4)),l4]]);
+	var orizz3 = SIMPLEX_GRID([[-(l4+l3),l-2*(l4+l3)],[-distaccoMuro,sp3-distaccoMuro],[-(h-(l4+l3)),l3]]);
+	var orizz2 = SIMPLEX_GRID([[-(l4+l3+l2),l-2*(l4+l3+l2)],[-distaccoMuro,sp2-distaccoMuro],[-(h-(l4+l3+l2)),l2]]);
+	var orizz1 = SIMPLEX_GRID([[-(l4+l3+l2+l1),l-2*(l4+l3+l2+l1)],[-distaccoMuro,sp1-distaccoMuro],[-(h-(l4+l3+l2+l1)),l1]]);
 
 	var hdav = 0.2; 
 	var ldav = 0.2;
@@ -405,14 +462,19 @@ var mkFinestra = function (l,h,conVetro,conDavanzale,conCornicione){
 	//var profiloCornicione = [[0,0,0],[0,0.2*lcorn,0.1*hcorn],[0,0.35*lcorn,0.5*hcorn],[0,0.6*lcorn,0.65*hcorn],[0,0.75*lcorn,0.65*hcorn],[0,0.75*lcorn,0.8*hcorn],[0,0.85*lcorn,0.8*hcorn],[0,0.85*lcorn,0.85*hcorn],[0,1*lcorn,0.95*hcorn],[0,1*lcorn,1*hcorn],[0,0,1*hcorn]];
 	var profiloCornicione = [[0,0,0],[0,0.2*lcorn,0.1*hcorn],[0,0.2*lcorn,0.2*hcorn],[0,0.1*lcorn,0.5*hcorn],[0,0.4*lcorn,0.65*hcorn],[0,0.75*lcorn,0.65*hcorn],[0,0.75*lcorn,0.8*hcorn],[0,0.85*lcorn,0.8*hcorn],[0,0.85*lcorn,0.85*hcorn],[0,1*lcorn,0.95*hcorn],[0,1*lcorn,1*hcorn],[0,0,1*hcorn]];
 
-	var davanzale = mkProfiloConScorrimento(profiloDavanzale,l,0.1,0);
-	var cornicione = mkProfiloConScorrimento(profiloCornicione,l,0.25,0);
+	var sforoDavanzale = 0.1;
+	var sforoCornicione = 0.25;
+
+	var davanzale = mkProfiloConScorrimento(profiloDavanzale,l,sforoDavanzale,0);
+	var cornicione = mkProfiloConScorrimento(profiloCornicione,l,sforoCornicione,0);
 		
 		davanzale.translate([1,2],[0.1,-hdav]);
 		cornicione.translate([1,2],[0.1,h]);
 
-	var vetro = SIMPLEX_GRID([[l],[spVetro],[h]]);
-		vetro.color(coloreVetri);
+	var vetro = COLOR(coloreVetri)(T([2])([-0.01])(SIMPLEX_GRID([[l],[spVetro],[h+0.01]])));
+		//vetro.color(coloreVetri);
+
+	var davanzaleInterno = COLOR(colorePavimenti)(T([1,2])([-(0.1),-0.1])(SIMPLEX_GRID([[l],[0.2],[0.1]])));
 
 	var compFinestraScura = [vert1,vert2,vert3,vert4,orizz1,orizz2,orizz3,orizz4];
 		if(conDavanzale){
@@ -431,6 +493,9 @@ var mkFinestra = function (l,h,conVetro,conDavanzale,conCornicione){
 		}
 		if(conCornicione){
 			componenti.push(cornicione);
+		}
+		if(conDavanzale){
+			componenti.push(davanzaleInterno);
 		}
 
 		finestra = STRUCT(componenti).scale([1],[-1]);
@@ -482,6 +547,163 @@ var mkFinestraAlta = function(l,h){
 
 	return finestra;
 
+}
+
+
+var mkCustomBlocco = function (cpoints,spessore,n1,n2,durezzaCurva,grado){ //control points sul piano X,Z ! (y = 0 per ogni punto) , 0 = usa valore di default.
+	if(cpoints == undefined){
+		console.log("NO CONTROL POINTS FOR THIS BLOCK!")
+		return undefined;
+	}
+
+	var spess = spessore || 0.2;
+	var n = n1 || resMap["blocco"][0];
+	var durezza = durezzaCurva || 2;
+	var g = grado || 2;
+
+	var detail = n2 || resMap["blocco"][1];
+
+	var domain2 = D11([n,detail]);
+
+	var base = mkNub(cpoints,g,S0);
+
+
+	var csopra = cpoints.map(function(p){return [p[0],spess,p[2]]});
+	var sopra = mkNub(csopra,g,S0);
+
+
+
+	var xEnd = 0;
+	var yEnd = spess;
+	var zEnd = 0;
+
+	for (var i in cpoints){
+		xEnd += cpoints[i][0];
+		zEnd += cpoints[i][2];
+	}
+
+	xEnd = xEnd/cpoints.length;
+	zEnd = zEnd/cpoints.length;
+
+	pEnd = [xEnd,yEnd,zEnd];
+
+
+	var puntoDiChiusura = function(){return pEnd;}
+
+	var controls = [base];
+	for(var i = 0; i<durezza; i++){
+		controls.push(sopra);
+	}
+	controls.push(puntoDiChiusura);
+
+	var surf = BEZIER(S1)(controls);
+
+	var dsurf = MAP(surf)(domain2);
+
+	return dsurf;
+}
+var mkBloccoBase = function(cps){
+	return mkCustomBlocco(cps,0.5,cps.length-1,resMap["bloccoBase"][1],4,1);
+}
+
+var mkBlocco = function(spess,l,h){
+
+	var ll = l || 0.8;
+	var hh = h || 0.35;
+	var spessore = spess || 0.3;
+
+
+	var cbase = [[ll/2,0,hh],[ll*0.3/2,0,hh],[0,0,hh],[0,0,hh/2],[0,0,0],[ll*0.3/2,0,0],[ll*1.7/2,0,0],[ll,0,0],[ll,0,hh/2],[ll,0,hh],[ll*1.7/2,0,hh],[ll/2,0,hh]];
+
+	return mkCustomBlocco(cbase,spessore);
+
+}
+
+var mkGrigliaBuco = function(){
+	var linee = [];
+	var dimGriglia = 1.4;
+	var distLinee = 0.2;
+	var nLinee = 7;
+
+	var dg = dimGriglia;
+
+	for (var i = 1; i<=nLinee; i++){
+		var x = i*distLinee;
+		var cx = dimGriglia - x;
+
+			linee.push(POLYLINE([[0,0,x],[x,0,0]]));
+			linee.push(POLYLINE([[0,0,cx],[x,0,dg]]));
+		if(i!=nLinee){
+			linee.push(POLYLINE([[cx,0,0],[dg,0,x]]));
+			linee.push(POLYLINE([[cx,0,dg],[dg,0,cx]]));
+		}
+	}
+
+	return COLOR(coloreGrigliaBuco)(STRUCT(linee));
+}
+
+var mkBucoConPietre = function(type){
+
+	//parte sopra : b1 , b2 , b3 , b2 , b1
+
+	var profB1 = [[0,0,0],[0.5,0,0],[0.3,0,0.4],[0,0,0.4],[0,0,0]];
+	var profB2 = [[0.5,0,0],[0.3,0,0.4],[0.7,0,0.4],[0.8,0,0],[0.5,0,0]];
+	var profB3 = [[0.7,0,0.4],[0.8,0,0],[1.1,0,0],[1.2,0,0.4],[0.7,0,0.4]];
+
+	var profB4 = [[0,0,0],[0.41,0,0],[0.41,0,0.4],[0,0,0.4],[0,0,0]];
+	var profB5 = [[0.41,0,0.4],[0.1,0,0.4],[0.1,0,0.8],[0.41,0,0.8],[0.41,0,0.4]];
+
+	//var profBBase = [[0.41,0,0],[1.49,0,0],[1.49,0,0.4],[0.41,0,0.4],[0.41,0,0]];
+	var profBBase = [[0.4,0,0],[1.5,0,0],[1.5,0,0.4],[0.4,0,0.4],[0.4,0,0]];
+
+	var b1 = T([2])([1.6-0.01])(mkBloccoBase(profB1));
+	var b2 = T([2])([1.6-0.01])(mkBloccoBase(profB2));
+	var b3 = T([2])([1.6-0.01])(mkBloccoBase(profB3));
+	var b4 = mkBloccoBase(profB4);
+	var b5 = mkBloccoBase(profB5);
+
+	var b6 = T([2])([0.8])(b4);
+	var b7 = T([2])([0.8])(b5);
+
+	var bBase = mkBloccoBase(profBBase);
+
+	var lato = STRUCT([b1,b2,b4,b5,b6,b7]);
+	var lato2 = T([0])([1.9])(S([0])([-1])(lato));
+
+	var pietreBuco = COLOR(coloreColonne)(T([1])([0.5])(S([1])([-1])(STRUCT([lato,lato2,b3,bBase]))));
+	
+	var elementi = [pietreBuco];
+
+	if (type != "pieno"){
+		var griglia = T([0,1,2])([0.4-0.15,0.15,0.4-0.1])(mkGrigliaBuco());
+		var retroBuio = COLOR([0,0,0])(SIMPLEX_GRID([[1.9],[-0.5,0.1],[2]]));
+		elementi.push(griglia);
+		elementi.push(retroBuio);
+	} else {
+		var tappo = COLOR(coloreIntonaco)(SIMPLEX_GRID([[-0.4,1.1],[-0.25,0.1],[1.6]]));
+		elementi.push(tappo);
+	}
+
+	return STRUCT(elementi);
+}
+
+var mkAngoloDiPietre = function(){
+	var mkBloccoQuadrato = function(l,h){
+		var spess = l/2;
+		var b1 = mkBlocco(spess,l,h);
+		var b2 = S([1])([-1])(b1);
+
+		return T([1])([spess])(STRUCT([b1,b2]));
+	}
+
+	var trasl = T([2])([0.4]);
+
+	var b1 = mkBloccoQuadrato(0.6,0.4);
+	var b2 = mkBloccoQuadrato(0.4,0.4);
+
+	var angolo = STRUCT([b1,trasl,b2,trasl,b1,trasl,b2,trasl,b1]);
+
+	return angolo;
 }
 
 var mkTorre = function (){
@@ -538,7 +760,7 @@ var mkTorre = function (){
 
 
 		var bordinoAltoNub = mkNubSurfaceWithCPointsAndGrades(pbaCP,1,1);
-		var bordinoAlto = MAP(bordinoAltoNub)(DOMAIN([[0,1],[0,1]])([pbaObliquo1.length-1,4]));
+		var bordinoAlto = MAP(bordinoAltoNub)(D11([pbaObliquo1.length-1,4]));
 			bordinoAlto.translate([0,1,2],[xtorre/2 + 0.3,ytorre/2 + 0.3,2.2+10+0.3]);
 
 		//--------------
@@ -549,11 +771,23 @@ var mkTorre = function (){
 
 
 		var btFronte =  SIMPLEX_GRID([[-0.1,0.2,2.6,-1.3,2.6],[-0.1,0.1],[2]]);
-		var btSx = 		SIMPLEX_GRID([[-0.1,0.1],[-0.1,-0.1,0.1,2.6,-1.3,2.6],[2]]);
+		var btSx = 		SIMPLEX_GRID([[-0.1,0.1],[-0.1,-0.1,0.1,2.5,-1.5,2.5],[2]]);
 
 		//--------------
 		var baseTorre = STRUCT([btFronte,btSx]);
 		baseTorre.color(coloreIntonaco);
+		//--------------
+
+		//--------------
+		var bucoBaseFronte = T([0])([0.3+2.6-0.4])(mkBucoConPietre());
+		//--------------
+
+		//--------------
+		var bucoBaseSx = R([0,1])([-PI/2])(S([0])([-1])(T([0])([0.3+2.6-0.4])(mkBucoConPietre("pieno"))));
+		//--------------
+
+		//--------------
+		var angoloDiPietre = COLOR(coloreColonne)(mkAngoloDiPietre());
 		//--------------
 
 		var mkTettoTorre = function(){
@@ -585,21 +819,25 @@ var mkTorre = function (){
 		var finestraAltaFronte = mkFinestraAlta(1.5,2.5);
 			finestraAltaFronte.translate([0,2],[0.2,0.2]);
 
+		//--------------
 		var finestreFronte = STRUCT([finestraAltaFronte,finestraBassaFronte]);
+		//--------------
 
 
+		//--------------
 		var finestreLato = T([1])([(0.3+2.4)*2+1.7])(R([0,1])([-PI/2])(finestreFronte));
+		//--------------
 
 
+		//--------------
 		var tettoTorre = mkTettoTorre();
+		//--------------
 			tettoTorre.translate([0,1,2],[0,0,2.2+10+0.3+0.1]);
 
-		var torre = STRUCT([muriTorre,pavimentoTorre,bordini,baseTorre,tettoTorre,finestreFronte,finestreLato]);
+		var torre = STRUCT([muriTorre,pavimentoTorre,bordini,baseTorre,tettoTorre,finestreFronte,finestreLato,bucoBaseFronte,bucoBaseSx,angoloDiPietre]);
 
 		return torre;
 }
-
-
 
 
 var mkElementoFacciata = function(){
@@ -614,7 +852,9 @@ var mkElementoFacciata = function(){
 
 	var bordinoBaseFacciataEsternoFronte = SIMPLEX_GRID([[4.2],[0.3],[-2,0.2]]);
 
-	var baseFacciataFronte =  SIMPLEX_GRID([[2.6,-1.3,0.3],[-0.1,0.1],[2]]);
+
+	var baseFacciataFronte =  SIMPLEX_GRID([[2.7,-1.1,0.4],[-0.1,0.1],[2]]);
+	var baseFacciataFronte2 =  SIMPLEX_GRID([[-2.7,1.1,-0.4],[-0.1,0.1],[-1.6,0.4]]);
 
 	var pavimentoBase =  SIMPLEX_GRID([[4.2],[-0.3,6.5],[-2,-0.2, 0.3]]);
 	var pavimentoPrimo = SIMPLEX_GRID([[4.2],[-0.3,-0.1,6.4],[-2,-0.2,-0.3,-5,0.1]]);
@@ -623,7 +863,7 @@ var mkElementoFacciata = function(){
 	var pavimenti = STRUCT([pavimentoBase,pavimentoPrimo,soffitto]);
 	pavimenti.color(colorePavimenti);
 
-	var intonaco = STRUCT([muriFacciataFronteB,muriFacciataFronteA,baseFacciataFronte]);
+	var intonaco = STRUCT([muriFacciataFronteB,muriFacciataFronteA,baseFacciataFronte,baseFacciataFronte2]);
 	intonaco.color(coloreIntonaco);
 
 	var finestraAlta = mkFinestraAlta();
@@ -634,77 +874,13 @@ var mkElementoFacciata = function(){
 	var finestraBassa = mkFinestra();
 		finestraBassa.translate([0,1,2],[2.4,0.3+0.1,2.2+0.3+0.7+0.001]);
 
-	var elem = STRUCT([intonaco,bordi,finestraAlta,finestraBassa,pavimenti]);
+	var buco = T([0])([2.3])(mkBucoConPietre());
+
+	var elem = STRUCT([intonaco,bordi,finestraAlta,finestraBassa,pavimenti,buco]);
 
 	return elem;
 }
 
-var mkCustomBlocco = function (cpoints,spessore,n,durezzaCurva,grado){ //control points sul piano X,Z ! (y = 0 per ogni punto) , 0 = usa valore di default.
-	if(cpoints == undefined){
-		console.log("NO CONTROL POINTS FOR THIS BLOCK!")
-		return undefined;
-	}
-
-	var spess = spessore || 0.2;
-	var nn = n || resMap["blocco"][0];
-	var durezza = durezzaCurva || 2;
-	var g = grado || 2;
-
-	var detail = resMap["blocco"][1];
-
-	var domain2 = DOMAIN([[0,1],[0,1]])([nn,detail]);
-
-	var base = mkNub(cpoints,g,S0);
-
-
-	var csopra = cpoints.map(function(p){return [p[0],spess,p[2]]});
-	var sopra = mkNub(csopra,g,S0);
-
-
-
-	var xEnd = 0;
-	var yEnd = spess;
-	var zEnd = 0;
-
-	for (var i in cpoints){
-		xEnd += cpoints[i][0];
-		zEnd += cpoints[i][2];
-	}
-
-	xEnd = xEnd/cpoints.length;
-	zEnd = zEnd/cpoints.length;
-
-	pEnd = [xEnd,yEnd,zEnd];
-
-
-	var puntoDiChiusura = function(){return pEnd;}
-
-	var controls = [base];
-	for(var i = 0; i<durezza; i++){
-		controls.push(sopra);
-	}
-	controls.push(puntoDiChiusura);
-
-	var surf = BEZIER(S1)(controls);
-
-	var dsurf = MAP(surf)(domain2);
-
-	return dsurf;
-}
-
-var mkBlocco = function(n,spess,l,h,alfa){
-
-	var ll = l || 0.8;
-	var hh = h || 0.35;
-	var nn = n || 10;
-	var spessore = spess || 0.3;
-
-
-	var cbase = [[ll/2,0,hh],[ll*0.3/2,0,hh],[0,0,hh],[0,0,hh/2],[0,0,0],[ll*0.3/2,0,0],[ll*1.7/2,0,0],[ll,0,0],[ll,0,hh/2],[ll,0,hh],[ll*1.7/2,0,hh],[ll/2,0,hh]];
-
-	return mkCustomBlocco(cbase,spessore,nn);
-
-}
 
 var mkCapitello = function(){
 
@@ -726,7 +902,7 @@ var mkCapitello = function(){
 	var profiloVert = NUBS(S0)(2)(mkKnotsG2(cpVert))(cpVert);
 	var profiloOrizz = NUBS(S1)(2)(mkKnotsG2(ctrasl))(ctrasl);
 
-	var dom2 = DOMAIN([[0,1],[0,1]])(resMap["capitello"]);
+	var dom2 = D11(resMap["capitello"]);
 
 	var capitello = MAP(PROFILEPROD_SURFACE([profiloVert,profiloOrizz]))(dom2);
 	
@@ -742,7 +918,7 @@ var mkColonna = function (){
 
 	var bCircularDetail = 12;
 
-	var b = mkBlocco(bCircularDetail);
+	var b = mkBlocco();
 
 	var capitello = mkCapitello();
 	var capitelloAlto = S([2])([-1])(capitello);
@@ -792,7 +968,7 @@ var mkArcata = function (){
 		var chiusuraFronte = [pDiChiusuraA,pDiChiusuraA,pDiChiusuraA];
 		var chiusuraRetro = [pDiChiusuraB,pDiChiusuraB,pDiChiusuraB];
 
-		var b0 = mkBlocco(bCircularDetail+2,0.2,0.6,0.33);
+		var b0 = mkBlocco(0.2,0.6,0.33);
 			b0.translate([0,2],[-0.3,0.01]);
 			b0.translate([2],[0.35]);
 
@@ -827,18 +1003,18 @@ var mkArcata = function (){
 		var blocchiSquadrati = STRUCT([blocchiSquadratiA,blocchiSquadratiB]);
 
 		var retroArcoMapping = mkNubSurfaceWithCPointsAndGrades([chiusuraFronte,cpRetroArcoA,cpRetroArcoB,chiusuraRetro], 2, 1);
-		var domRetroArco = DOMAIN([[0,1],[0,1]])(resMap["retroArco"]);
+		var domRetroArco = D11(resMap["retroArco"]);
 		var retroArco = MAP(retroArcoMapping)(domRetroArco);
 			retroArco.translate([0,1,2],[-0.01,-0.1,0.35*11 + 0.01]);
 
 		var arcataSx = STRUCT([colonnina,arco,blocchiSquadrati,retroArco]);
 		var arcataDx = arcataSx.clone().scale([0],[-1]).translate([0],[3]);
 
-		var chiaveDiVolta = mkCustomBlocco(cpChiave,0.25,bCircularDetail,3);
+		var chiaveDiVolta = mkCustomBlocco(cpChiave,0.25,bCircularDetail,undefined,3);
 			chiaveDiVolta.translate([2],[0.35 + 0.35*10]);
 			chiaveDiVolta.scale([1],[-1]);
 		
-		var retroChiave = mkCustomBlocco(cpChiave,0.9,bCircularDetail,4);
+		var retroChiave = mkCustomBlocco(cpChiave,0.9,bCircularDetail,undefined,4);
 			retroChiave.translate([2],[0.35 + 0.35*10]);
 
 
@@ -851,8 +1027,8 @@ var mkArcata = function (){
 
 
 var mkTimpano = function(){
-		var dom14x2 = DOMAIN([[0,1],[0,1]])([14,2]);
-		var dom14x1 = DOMAIN([[0,1],[0,1]])([14,1]);
+		var dom14x2 = D11([14,2]);
+		var dom14x1 = D11([14,1]);
 		var dom8x1 = D11([8,1]);
 
 
@@ -1007,7 +1183,7 @@ var mkSottoTimpano = function(){
 	var surf = mkNubSurfaceWithCPointsAndGrades([profiloCentrale,profiloObliquo,profiloAMuro],1,1);
 
 
-	var dom2 = DOMAIN([[0,1],[0,1]])([profilo.length -1,2]);
+	var dom2 = D11([profilo.length -1,2]);
 
 	var mezzaBase = MAP(surf)(dom2);
 
@@ -1130,10 +1306,10 @@ var mkPortico = function(){
 		var muroDietroColonne = SIMPLEX_GRID([[0.8,0.1,0.8,0.3,-2.4,0.3,0.8,0.3,-2.4,0.3,0.8,0.3,-2.4,0.3,0.8,0.1,0.8],[profonditaColonne],[hportico]]);
 			muroDietroColonne.color(coloreColonne);
 
-		var spessCopriRilievo = spessRilievo*2+0.1;
+		var spessCopriRilievo = spessRilievo*2+0.2;
 		var spLinea = 0.3;
 		var distPortaLinea = 0.1;
-		var lineaPorticoA = SIMPLEX_GRID([[(profonditaCunetta-intermezzoTorreColonne),-(lportico-distRilievi-spessCopriRilievo)/2,spessCopriRilievo,-distRilievi+spessCopriRilievo,spessCopriRilievo,-(lportico-distRilievi-spessCopriRilievo)/2,profonditaCunetta-intermezzoTorreColonne],[-profonditaPortico+0.19,0.11],[-hportone,-distPortaLinea,spLinea]]);
+		var lineaPorticoA = SIMPLEX_GRID([[(profonditaCunetta-intermezzoTorreColonne),-(lportico-distRilievi-spessCopriRilievo)/2,spessCopriRilievo,-distRilievi+spessCopriRilievo,spessCopriRilievo,-(lportico-distRilievi-spessCopriRilievo)/2,profonditaCunetta-intermezzoTorreColonne],[-profonditaPortico+0.19,0.09],[-hportone,-distPortaLinea,spLinea]]);
 		var lineaPorticoB = SIMPLEX_GRID([[profonditaCunetta-intermezzoTorreColonne,lportico,profonditaCunetta-intermezzoTorreColonne],[-profonditaPortico+0.1,0.1],[-hportone,-distPortaLinea,spLinea]]);
 		var linea = STRUCT([lineaPorticoA,lineaPorticoB]);
 			linea.color(coloreLineaPortico);
@@ -1162,7 +1338,7 @@ var mkColonnina = function(){
 	var baseColonninaNub = mkNubG1(baseColonninaCP,S1);
 
 
-	var dom12x4 = DOMAIN([[0,1],[0,1]])([colonninaCP.length-1,baseColonninaCP.length-1]);
+	var dom12x4 = D11([colonninaCP.length-1,baseColonninaCP.length-1]);
 
 	var profProd = PROFILEPROD_SURFACE([colonninaNub,baseColonninaNub]);
 
@@ -1306,7 +1482,7 @@ var mkCornicione = function(){
 
 var mkFillerAngolo = function(){
 
-	var fillerMuro = SIMPLEX_GRID([[-0.3,0.1],[-0.3,0.1],[-2.2,9]]).color(coloreIntonaco);
+	var fillerMuro = SIMPLEX_GRID([[-0.3,0.1],[-0.3,0.1],[-2.2,8.5]]).color(coloreIntonaco);
 	var fillerBase = SIMPLEX_GRID([[-0.1,0.3],[-0.1,0.3],[2]]).color(coloreIntonaco);
 	var fillerBordinoBasso = SIMPLEX_GRID([[0.4],[0.4],[-2,0.2]]).color(coloreBordini);
 	var fillerBordinoMedio = SIMPLEX_GRID([[-0.2,0.2],[-0.2,0.2],[-2.2,0.3]]).color(coloreBordini);
@@ -1403,6 +1579,75 @@ var mkBaseFrontale = function(){
 
 }
 
+var mkParteSimmetricaRetro = function(){
+
+	var dimRetro = 5.3;
+	var hfinestre  = 2.7;
+	var distFinestreRosone = 1.6;
+	var lporta = 1.7;
+	var hporta = 2.7;
+
+	var hRosone = 2.2 + 1 + hfinestre + distFinestreRosone;
+	var rRosone = lporta/2 + lporta +0.25;
+	var r = rRosone;
+	var spVetro = 0.05;
+	var spRos = 0.4;
+	var spSbarra = 0.4;
+	var yRos = 0.3;
+	var distSbarre = 2*r/3;
+
+	var muroGrande = SIMPLEX_GRID([[2.5],[-0.3,0.1],[-2.2,8.5]]);
+	var muroFinestre = SIMPLEX_GRID([[-2.5,lporta],[-0.3,0.1],[-2.2,0.3+0.7,-hfinestre,distFinestreRosone]]);
+	var muroSottile = SIMPLEX_GRID([[-2.5,-lporta,0.25],[-0.3,0.1],[-2.2,0.3+0.7+hfinestre+distFinestreRosone]]);
+	var muroPorta = SIMPLEX_GRID([[-2.5,-lporta,-0.25,lporta],[-0.3,0.1],[-2.2,-hporta,0.3+0.7+distFinestreRosone]]);
+	var muroRosone = T([0,1,2])([2.5+rRosone,0.3+0.1,hRosone+spRos])(S([0])([-1])(R([1,2])([PI/2])(mkComplementareQuartoDiCirconferenzaSolido(rRosone,0.1,Math.floor(resMap["rosone"][0]/2)))));
+
+	var muroBase = SIMPLEX_GRID([[dimRetro],[-0.1,0.1],[2]]);
+	var bordinoBasso = SIMPLEX_GRID([[dimRetro],[0.3],[-2,0.2]]);
+	var bordinoMedio = SIMPLEX_GRID([[dimRetro-lporta/2],[-0.2,0.1],[-2.2,0.3]]);
+	var bordinoAlto = SIMPLEX_GRID([[dimRetro-lporta/2-0.151],[-0.25,0.05],[-2.2,-0.3,-0.5,0.2]]);
+	var bordinoSoffitto = SIMPLEX_GRID([[dimRetro],[-0.2,0.1],[-2.2,-8.5,0.3]]);
+
+	var muri = COLOR(coloreIntonaco)(STRUCT([muroGrande,muroFinestre,muroSottile,muroBase,muroPorta,muroRosone]));
+	var bordi = COLOR(coloreBordini)(STRUCT([bordinoBasso,bordinoMedio,bordinoAlto,bordinoSoffitto]));
+
+	var finestra = T([0,1,2])([2.5,0.3+0.1,2.2+1+0.001])(mkFinestra());
+
+
+	return STRUCT([muri,bordi,finestra]);
+}
+
+var mkParteCentraleRetro = function(){
+	var dimRetro = 5.3;
+	var hfinestre  = 2.7;
+	var distFinestreRosone = 1.6;
+	var lporta = 1.7;
+	var hporta = 2.7;
+
+	var hRosone = 2.2 + 1 + hfinestre + distFinestreRosone;
+	var rRosone = lporta/2 + lporta +0.25;
+	var r = rRosone;
+	var spVetro = 0.05;
+	var spRos = 0.4;
+	var spSbarra = 0.4;
+	var yRos = 0.3;
+	var distSbarre = 2*r/3;
+
+	var baseRosone = SIMPLEX_GRID([[2*r],[yRos],[spRos]]);
+	var sbarraRosone = SIMPLEX_GRID([[-(2*r-distSbarre-spSbarra)/2,spSbarra,-(distSbarre-spSbarra),spSbarra],[-0.01,yRos-0.01],[-spRos,r-spRos]]);
+	
+	var cerchioRosone = T([0,1,2])([r,yRos,spRos])(R([1,2])([PI/2])(mkPartOfCoronaCircolare(r-spRos,r,yRos,0,PI,resMap["rosone"][0])));
+	var rosone = COLOR(coloreBordiniChiari)(T([0,1,2])([dimRetro-r,0.3-0.01,hRosone])(STRUCT([baseRosone,sbarraRosone,cerchioRosone])));
+
+	var vetroRosone = COLOR(coloreVetri)(T([0,1,2])([dimRetro-r,0.3-0.01,hRosone])(SIMPLEX_GRID([[2*r],[-yRos+spVetro+0.1,spVetro],[-spRos,r]])));
+
+	var porta = T([0,1,2])([dimRetro-lporta/2,0.3+0.1,2.2])(mkFinestra(0,0,false,false,true));
+
+	var centroRetro = STRUCT([porta,rosone,vetroRosone]);
+
+	return centroRetro;
+}
+
 //######################################################################## BUILD ##########################################################################
 
 //------------------------------------
@@ -1419,6 +1664,7 @@ var dimColonna = 0.8;
 var intermezzoColonnaColonna = 0.1;
 var altezzaBecchiSottoTetto = 0.5;
 var dimXVilla = 27.6;
+var dimParteCentraleRetro = 10.6;
 
 
 var elFac = mkElementoFacciata();
@@ -1440,8 +1686,11 @@ var elFacRetro = T([0,1])([0.3+0.1,0.3+dimElFac*3 + dimTorre+0.1])(S([1])([-1])(
 
 var tRetro = T([0])([dimElFac]);
 
+var parteSimmetricaFacRetro = 	T([0,1])([0.3+dimElFac*2+0.1,0.3+dimTorre+dimElFac*3+0.1])(S([1])([-1])(mkParteSimmetricaRetro()));
+var centroFacRetro = 			T([0,1])([0.3+dimElFac*2+0.1,0.3+dimTorre+dimElFac*3+0.1])(S([1])([-1])(mkParteCentraleRetro()));
+
 //------------------------------------
-var facciataRetro = STRUCT([elFacRetro,tRetro,elFacRetro]);
+var facciataRetro = STRUCT([parteSimmetricaFacRetro,centroFacRetro,elFacRetro,tRetro,elFacRetro]);
 //------------------------------------
 
 
@@ -1522,11 +1771,19 @@ var baseFrontale = mkBaseFrontale();
 var fillerFrontale = mkFillerFacciataFrontale(dimTorre,intermezzoTorreColonne);
 
 
+console.log("nostruct");
+
 var parteDestraVilla = STRUCT([torre,facciata,cornicione,facciataRetro,fillerAngoloRetro,fillerFrontale]);
+var parteSinistraVilla = T([0])([dimXVilla+2*0.3])(S([0])([-1])(parteDestraVilla));
 
+console.log("structDestra");
 
-var villa = STRUCT([parteDestraVilla,colonne,arcate,timpano,portico,miniColonnato,tetto,baseFrontale]);
+var villa = STRUCT([parteDestraVilla,parteSinistraVilla,colonne,arcate,timpano,portico,miniColonnato,tetto,baseFrontale,centroFacRetro]);
 
+console.log("structCompleto");
 
 
 DRAW(villa);
+
+
+console.log("drawed");
